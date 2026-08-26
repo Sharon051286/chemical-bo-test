@@ -144,7 +144,7 @@ function Guide() {
               总评估预算（批量 ×（迭代 + 1）+ 先验条数）必须不超过该组合数。否则平台会在工作台给出警告，无法提交运行。
             </p>
 
-            <div className="rounded-md border border-border bg-destructive/10 p-3 text-xs leading-relaxed text-destructive-foreground">
+            <div className="rounded-md border border-destructive/35 bg-destructive/10 p-3 text-xs font-medium leading-relaxed text-destructive">
               <p>
                 如果组合数接近预算，推荐结果可能会出现重复组合；建议减少候选取值或增加批量大小以加速覆盖空间。
               </p>
