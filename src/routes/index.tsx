@@ -332,7 +332,7 @@ function Workbench() {
               </p>
             </div>
             <Badge variant="outline" className="num">
-              Ax · 单目标
+              {engineLabel} · {isMulti ? "多目标 Pareto" : "单目标"}
             </Badge>
           </div>
 
@@ -347,6 +347,7 @@ function Workbench() {
                   <TableHead>碱</TableHead>
                   <TableHead>溶剂</TableHead>
                   <TableHead className="text-right">预测产率</TableHead>
+                  {isMulti && <TableHead className="text-right">预测成本</TableHead>}
                   <TableHead className="w-28">实测值</TableHead>
                 </TableRow>
               </TableHeader>
@@ -364,9 +365,19 @@ function Workbench() {
                         <TooltipTrigger asChild>
                           <span className="num font-medium">{s.predicted.toFixed(1)} %</span>
                         </TooltipTrigger>
-                        <TooltipContent>期望提升 EI = {s.ei.toFixed(3)}</TooltipContent>
+                        <TooltipContent>
+                          {isMulti
+                            ? `期望超体积提升 EHVI = ${s.ei.toFixed(3)}`
+                            : `期望提升 EI = ${s.ei.toFixed(3)}`}
+                        </TooltipContent>
                       </Tooltip>
                     </TableCell>
+                    {isMulti && (
+                      <TableCell className="num text-right">
+                        ¥{Math.round(12 + s.predicted * 0.52)}
+                      </TableCell>
+                    )}
+
                     <TableCell>
                       <Input
                         className="num h-8 text-[13px]"
