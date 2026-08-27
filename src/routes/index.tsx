@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Play, Plus, Save, Trash2, Info, Download } from "lucide-react";
+import { Play, Plus, Save, Trash2, Info, Download, FilePlus2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -36,6 +45,7 @@ import {
   type ParamRow,
 } from "@/lib/edbo-data";
 
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -58,6 +68,14 @@ function Workbench() {
   const [batch, setBatch] = useState("5");
   const [rounds, setRounds] = useState("3");
   const [observed, setObserved] = useState<Record<number, string>>({});
+  const [projectName, setProjectName] = useState("EDBO-024 · Suzuki 偶联条件优化");
+
+  // 新建课题对话框
+  const [open, setOpen] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [draftEngine, setDraftEngine] = useState("ax");
+  const [draftObjective, setDraftObjective] = useState("multi");
+  const [draftSecond, setDraftSecond] = useState("成本");
 
   const update = (id: string, patch: Partial<ParamRow>) =>
     setParams((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -69,6 +87,22 @@ function Workbench() {
     ]);
 
   const budget = Number(batch) * (Number(rounds) + 1);
+  const isMulti = objective === "multi";
+  const engineLabel = engine === "ax" ? "Ax" : "MNL";
+
+  const createProject = () => {
+    setProjectName(draftName.trim() || "未命名课题");
+    setEngine(draftEngine);
+    setObjective(draftObjective);
+    setParams(defaultParams);
+    setObserved({});
+    setOpen(false);
+    toast.success(
+      `已新建课题：${draftName.trim() || "未命名课题"} · ${
+        draftObjective === "multi" ? `多目标（产率 / ${draftSecond}）` : "单目标"
+      }`,
+    );
+  };
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-4 py-6 lg:px-8">
@@ -76,21 +110,101 @@ function Workbench() {
         <div>
           <h1 className="text-2xl font-semibold">优化工作台</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            配置参数空间与优化目标，运行后获得下一批实验推荐条件；回填真实结果即可继续迭代。
+            当前课题：{projectName} · 支持单目标与多目标（Pareto）优化。
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="num">
             评估预算 {budget}
           </Badge>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <FilePlus2 className="size-4" /> 新建课题
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>新建优化课题</DialogTitle>
+                <DialogDescription>
+                  选择优化引擎与目标模式；多目标模式会同时建模第二个指标并给出 Pareto 前沿。
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">课题名称</Label>
+                  <Input
+                    value={draftName}
+                    placeholder="例如：光催化剂筛选（产率 / 成本）"
+                    onChange={(e) => setDraftName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">优化引擎</Label>
+                  <Select value={draftEngine} onValueChange={setDraftEngine}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ax">Ax / BoTorch</SelectItem>
+                      <SelectItem value="mnl">MNL 离散选择</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">目标模式</Label>
+                  <Select value={draftObjective} onValueChange={setDraftObjective}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">单目标 · 最大化产率</SelectItem>
+                      <SelectItem value="multi">多目标 · Pareto 前沿</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {draftObjective === "multi" && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">第二目标（最小化）</Label>
+                    <Select value={draftSecond} onValueChange={setDraftSecond}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="成本">成本 ¥/g</SelectItem>
+                        <SelectItem value="反应时间">反应时间 h</SelectItem>
+                        <SelectItem value="杂质">杂质含量 %</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setOpen(false)}>
+                  取消
+                </Button>
+                <Button onClick={createProject}>
+                  <Plus className="size-4" /> 创建课题
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Button variant="outline" size="sm">
             <Download className="size-4" /> 导出 CSV
           </Button>
-          <Button size="sm" onClick={() => toast.success("已提交运行：Ax 引擎，5 × 3 轮")}>
+          <Button
+            size="sm"
+            onClick={() =>
+              toast.success(
+                `已提交运行：${engineLabel} 引擎 · ${isMulti ? "多目标" : "单目标"} · ${batch} × ${rounds} 轮`,
+              )
+            }
+          >
             <Play className="size-4" /> 运行优化
           </Button>
         </div>
       </div>
+
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         {/* 参数配置 */}
@@ -218,7 +332,7 @@ function Workbench() {
               </p>
             </div>
             <Badge variant="outline" className="num">
-              Ax · 单目标
+              {engineLabel} · {isMulti ? "多目标 Pareto" : "单目标"}
             </Badge>
           </div>
 
@@ -233,6 +347,7 @@ function Workbench() {
                   <TableHead>碱</TableHead>
                   <TableHead>溶剂</TableHead>
                   <TableHead className="text-right">预测产率</TableHead>
+                  {isMulti && <TableHead className="text-right">预测成本</TableHead>}
                   <TableHead className="w-28">实测值</TableHead>
                 </TableRow>
               </TableHeader>
@@ -250,9 +365,19 @@ function Workbench() {
                         <TooltipTrigger asChild>
                           <span className="num font-medium">{s.predicted.toFixed(1)} %</span>
                         </TooltipTrigger>
-                        <TooltipContent>期望提升 EI = {s.ei.toFixed(3)}</TooltipContent>
+                        <TooltipContent>
+                          {isMulti
+                            ? `期望超体积提升 EHVI = ${s.ei.toFixed(3)}`
+                            : `期望提升 EI = ${s.ei.toFixed(3)}`}
+                        </TooltipContent>
                       </Tooltip>
                     </TableCell>
+                    {isMulti && (
+                      <TableCell className="num text-right">
+                        ¥{Math.round(12 + s.predicted * 0.52)}
+                      </TableCell>
+                    )}
+
                     <TableCell>
                       <Input
                         className="num h-8 text-[13px]"
