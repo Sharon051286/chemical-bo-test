@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Play, Plus, Save, Trash2, Info, Download } from "lucide-react";
+import { Play, Plus, Save, Trash2, Info, Download, FilePlus2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -35,6 +44,7 @@ import {
   type Encoding,
   type ParamRow,
 } from "@/lib/edbo-data";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
